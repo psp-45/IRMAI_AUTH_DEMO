@@ -19,7 +19,7 @@ output "artifact_registry_url" {
 
 output "kubernetes_namespace" {
   description = "The name of the Kubernetes namespace created"
-  value       = kubernetes_namespace.outlier_demo.metadata[0].name
+  value       = kubernetes_namespace.irmaiauth_demo.metadata[0].name
 }
 
 # This output for the LoadBalancer IP will be known only after apply
