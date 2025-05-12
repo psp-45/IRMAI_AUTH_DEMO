@@ -110,7 +110,7 @@ resource "kubernetes_deployment" "irmai_module" {
   provider = kubernetes # Explicitly use the kubernetes provider
   metadata {
     name      = "irmai-auth-module"
-    namespace = kubernetes_namespace.outlier_demo.metadata[0].name # Reference the namespace
+    namespace = kubernetes_namespace.irmaiauth_demo.metadata[0].name # Reference the namespace
     labels = {
       app = "irmai-auth-module"
     }
