@@ -1,0 +1,26 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: irmai-auth-module
+  namespace: irmai-auth
+spec:
+  releaseName: irmai-auth-module
+  interval: 1m
+  chart:
+    spec:
+      chart: ./helm/irmaiauth_test  # Path inside Git repo
+      sourceRef:
+        kind: GitRepository
+        name: irmai-auth-repo
+        namespace: flux-system
+  values:
+    image:
+      repository: irmaiauthacr.azurecr.io/irmai-auth-module
+      tag: latest
+      pullPolicy: Always
+    service:
+      type: LoadBalancer
+      port: 8080
+    containerPort: 8080
+    replicaCount: 1
+    namespace: irmai-auth

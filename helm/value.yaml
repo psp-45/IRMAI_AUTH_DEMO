@@ -1,0 +1,15 @@
+replicaCount: 1
+
+image:
+ repository: irmaiauthacr.azurecr.io/irmai-auth-module # Keep only one repository line
+ tag: latest
+ pullPolicy: Always
+
+
+service:
+  type: LoadBalancer        
+  port: 8080 # Use standard HTTP port or 8080 for consistency
+
+containerPort: 8080 # Match the actual application port
+
+namespace: irmai-auth  # Updated namespace for irmai authentication

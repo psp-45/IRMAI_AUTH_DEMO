@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: irmai-auth
+  namespace: irmai-auth
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: irmai-auth
+  template:
+    metadata:
+      labels:
+        app: irmai-auth
+    spec:
+      containers:
+        - name: irmai-auth
+          image: irmaiauthacr.azurecr.io/irmai-auth-module:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+          
+apiVersion: v1
+kind: Service
+metadata:
+  name: irmai-auth-service
+  namespace: irmai-auth
+spec:
+  selector:
+    app: irmai-auth
+  ports:
+    - name: http-app
+      protocol: TCP
+      port: 80
+      targetPort: 8080
+  type: LoadBalancer
