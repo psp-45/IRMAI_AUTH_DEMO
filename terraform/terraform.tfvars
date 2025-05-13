@@ -1,5 +1,12 @@
-subscription_id = "36448a90-905c-4f48-b1b3-deb171f7c247"
-client_id       = "7cc743bd-9d34-40fc-8ff9-b25030f79816"
-client_secret   = "CYN8Q~qzD3RNbVvpSfNdCab-TZKSuVB-bZvncc~h"
-tenant_id       = "38b2a0a6-29a4-4744-ac80-7617428c3bbe"
-github_token = "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"
+# --- terraform.tfvars ---
+
+# Specific values for your GCP project and resources.
+
+project_id = "midyear-lattice-455113-n7"
+region     = "us-central1"
+
+gke_cluster_name   = "irmai-cluster" # Updated cluster name
+artifact_repo_name = "irmai-artifact" # Updated artifact repo name
+
+node_count        = 1
+node_machine_type = "n1-standard-8" # Keep e2-medium or change if needed
