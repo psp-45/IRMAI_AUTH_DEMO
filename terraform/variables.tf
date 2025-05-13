@@ -31,7 +31,7 @@ variable "gke_cluster_name" {
 variable "artifact_repo_name" {
   description = "The name for the Artifact Registry repository"
   type        = string
-  default     = "irma-docker-repo"
+  default     = "irmai-docker-repo"
 }
 
 variable "node_count" {
