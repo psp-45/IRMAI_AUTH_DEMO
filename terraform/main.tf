@@ -2,50 +2,53 @@
 
 # Enable required GCP APIs
 resource "google_project_service" "artifact_registry" {
-  service             = "artifactregistry.googleapis.com"
-  project             = var.project_id
-  disable_on_destroy  = false
+  service              = "artifactregistry.googleapis.com"
+  project              = var.project_id
+  disable_on_destroy = false # Set to true if you don't want TF to disable this API on destroy
 }
 
 resource "google_project_service" "container" {
-  service             = "container.googleapis.com"
-  project             = var.project_id
-  disable_on_destroy  = false
+  service              = "container.googleapis.com"
+  project              = var.project_id
+  disable_on_destroy = false # Set to true if you don't want TF to disable this API on destroy
 }
 
-# Create Artifact Registry for Docker images
-resource "google_artifact_registry_repository" "docker_repo" {
+# DATA SOURCE: Use existing Artifact Registry for Docker images
+data "google_artifact_registry_repository" "docker_repo" {
   repository_id = var.artifact_repo_name
-  format        = "DOCKER"
+  project       = var.project_id
   location      = var.region
-  description   = "Docker repo for IRMAI Process Discovery"
 
-  depends_on = [google_project_service.artifact_registry]
+  depends_on = [google_project_service.artifact_registry] # Ensure API is active before attempting to read
 }
 
-# Create GKE Cluster
-resource "google_container_cluster" "primary" {
+# DATA SOURCE: Use existing GKE Cluster
+data "google_container_cluster" "primary" {
   name     = var.gke_cluster_name
   location = var.region
+  project  = var.project_id
 
-  remove_default_node_pool = true
-  initial_node_count       = 1
-
-  networking_mode = "VPC_NATIVE"
-  ip_allocation_policy {}
-
-  release_channel {
-    channel = "REGULAR"
-  }
-
-  depends_on = [google_project_service.container]
+  depends_on = [google_project_service.container] # Ensure API is active before attempting to read
 }
 
-# Create Node Pool for GKE Cluster
+# MANAGE NODE POOL for the EXISTING GKE Cluster
+#
+# IMPORTANT:
+# 1. If a node pool named "primary-node-pool" ALREADY EXISTS in your cluster
+#    (specified by var.gke_cluster_name) and was NOT created by this Terraform configuration,
+#    you MUST import it before applying changes. Use the command:
+#    terraform import google_container_node_pool.primary_nodes projects/<YOUR_PROJECT_ID>/locations/<REGION>/clusters/<YOUR_GKE_CLUSTER_NAME>/nodePools/primary-node-pool
+#    (Replace placeholders with your actual values from terraform.tfvars)
+#
+# 2. If "primary-node-pool" does NOT exist in your cluster, Terraform will attempt to create it.
+#
+# 3. If you DO NOT want Terraform to manage this node pool, remove this entire resource block
+#    and its corresponding output in outputs.tf.
 resource "google_container_node_pool" "primary_nodes" {
-  name       = "primary-node-pool"
-  location   = google_container_cluster.primary.location
-  cluster    = google_container_cluster.primary.name
+  name       = "primary-node-pool" # The name of the node pool within GKE
+  location   = data.google_container_cluster.primary.location
+  cluster    = data.google_container_cluster.primary.name
+  project    = var.project_id # Explicitly define project for clarity
   node_count = var.node_count
 
   node_config {
@@ -60,15 +63,14 @@ resource "google_container_node_pool" "primary_nodes" {
     auto_repair  = true
     auto_upgrade = true
   }
-
-  depends_on = [google_container_cluster.primary]
+  # This resource implicitly depends on data.google_container_cluster.primary
 }
 
 # Kubernetes Namespace
 resource "kubernetes_namespace" "irmaiauth_demo" {
-  provider = kubernetes
+  provider = kubernetes # This provider is configured using the GKE cluster data source
   metadata {
-    name = "irmaiauth-demo"
+    name = "irmaiauth-demo" # Name of the Kubernetes namespace
   }
 }
 
@@ -101,47 +103,3 @@ resource "kubernetes_deployment" "irmai_module" {
 
       spec {
         container {
-          name  = "irmaiauth-demo-module"
-          image = "${var.region}-docker.pkg.dev/${var.project_id}/${var.artifact_repo_name}/irmaiauth-demo-module:latest"
-
-          port {
-            container_port = 8080
-          }
-
-          port {
-            container_port = 8081
-          }
-        }
-      }
-    }
-  }
-
-  depends_on = [kubernetes_namespace.irmaiauth_demo]
-}
-
-# Kubernetes Service to Expose Deployment
-resource "kubernetes_service" "irmaiauth_demo_service" {
-  provider = kubernetes
-  metadata {
-    name      = "irmaiauth-demo-module-service"
-    namespace = kubernetes_namespace.irmaiauth_demo.metadata[0].name
-  }
-
-  spec {
-    selector = {
-      app = "irmaiauth-demo-module"
-    }
-
-    port {
-      name        = "http-app"
-      port        = 80
-      target_port = 8000
-      protocol    = "TCP"
-    }
-
-
-    type = "LoadBalancer"
-  }
-
-  depends_on = [kubernetes_deployment.irmaiauth_demo_module]
-}
