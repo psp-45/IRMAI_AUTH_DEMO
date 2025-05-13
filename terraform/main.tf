@@ -73,7 +73,7 @@ resource "kubernetes_namespace" "irmaiauth_demo" {
 }
 
 # Kubernetes Deployment
-resource "kubernetes_deployment" "irmaiauth_demo_module" {
+resource "kubernetes_deployment" "irmai_module" {
   provider = kubernetes
   metadata {
     name      = "irmaiauth-demo-module"
@@ -102,7 +102,7 @@ resource "kubernetes_deployment" "irmaiauth_demo_module" {
       spec {
         container {
           name  = "irmaiauth-demo-module"
-          image = "${var.region}-docker.pkg.dev/${var.project_id}/${var.artifact_repo_name}/irmai-process-discovery-module:latest"
+          image = "${var.region}-docker.pkg.dev/${var.project_id}/${var.artifact_repo_name}/irmaiauth-demo-module:latest"
 
           port {
             container_port = 8080
@@ -120,7 +120,7 @@ resource "kubernetes_deployment" "irmaiauth_demo_module" {
 }
 
 # Kubernetes Service to Expose Deployment
-resource "kubernetes_service" "irmaiauth_demo_service" {
+resource "kubernetes_service" "irmai_service" {
   provider = kubernetes
   metadata {
     name      = "irmaiauth-demo-module-service"
