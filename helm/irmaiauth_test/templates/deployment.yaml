@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: irmai-auth-module
+  name: irmaiauth-demo-module
   namespace: {{ .Values.namespace }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: irmai-auth
+      app: irmaiauth-demo
   template:
     metadata:
       labels:
-        app: irmai-auth-module
+        app: irmaiauth-demo-module
     spec:
       containers:
-        - name: irmai-auth-module
+        - name: irmaiauth-demo-module
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
