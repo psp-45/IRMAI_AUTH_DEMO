@@ -1,37 +1,6 @@
 # --- main.tf ---
 
-# Configure the Google Cloud provider
-provider "google" {
-  # Using variables for project and region as used elsewhere in your code
-  project = var.project_id
-  region  = var.region
-}
-
-# Configure the Kubernetes provider to connect to the GKE cluster
-# This is necessary to manage Kubernetes resources (namespaces, deployments, etc.)
-provider "kubernetes" {
-  # Use the output of the data.google_container_cluster to configure the provider
-  host = data.google_container_cluster.primary.endpoint
-
-  # Authentication method: GKE provides a mechanism to get a temporary token
-  # or use client certificates. Using a data source is common.
-  # For GKE authentication, a common pattern is to use a data source
-  # to get the cluster's authentication details. This often relies on
-  # gcloud being authenticated and configured.
-  # data "google_client_config" "current" {} # Requires the Google provider
-
-  # Uncomment and configure authentication here if needed.
-  # If you are running this from Cloud Shell or a machine with gcloud
-  # configured and authenticated, the Kubernetes provider can often
-  # pick up credentials automatically.
-  # token                  = data.google_client_config.current.access_token
-  # cluster_ca_certificate = base64decode(data.google_container_cluster.primary.master_auth[0].cluster_ca_certificate)
-
-  # A more modern and often simpler way with newer GKE versions and gcloud installed
-  # is to omit explicit credentials here and let the provider use gcloud.
-  # Check the Kubernetes provider documentation for the recommended authentication method for GKE.
-}
-
+# Provider configurations are now in providers.tf
 
 # Enable required GCP APIs
 resource "google_project_service" "artifact_registry" {
@@ -121,12 +90,94 @@ resource "google_container_node_pool" "primary_nodes" {
 }
 
 # Kubernetes Namespace for Auth Module
-# Assuming you need a separate namespace for the auth module
 resource "kubernetes_namespace" "irmai_auth" {
   provider = kubernetes # This resource uses the configured kubernetes provider
   metadata {
     name = "irmai-auth" # Name of the Kubernetes namespace for the auth module
   }
+}
+
+# Kubernetes Deployment for Auth Module
+# This resource deploys your irmai-auth application container.
+resource "kubernetes_deployment" "irmai_auth_deployment" {
+  provider = kubernetes # This resource uses the configured kubernetes provider
+  metadata {
+    name      = "irmai-auth-deployment" # Name for the deployment
+    namespace = kubernetes_namespace.irmai_auth.metadata[0].name # Reference the auth namespace
+    labels = {
+      app = "irmai-auth" # Label for the deployment and its pods - MUST match service selector
+    }
+  }
+
+  spec {
+    replicas = var.auth_replica_count # Use variable for replica count
+
+    selector {
+      match_labels = {
+        app = "irmai-auth" # Must match the template labels
+      }
+    }
+
+    template {
+      metadata {
+        labels = {
+          app = "irmai-auth" # Labels for the pods created by this deployment - MUST match service selector
+        }
+      }
+
+      spec {
+        container {
+          # --- Container Definition ---
+          name  = "irmai-auth-container" # Container name
+          image = "${data.google_artifact_registry_repository.docker_repo.location}-docker.pkg.dev/${var.project_id}/${data.google_artifact_registry_repository.docker_repo.repository_id}/${var.auth_image_name}:${var.auth_image_tag}" # Image path using variables
+
+          # Define the port your container listens on
+          port {
+            container_port = var.auth_container_port # Use variable for container port
+            protocol       = "TCP"
+          }
+
+          # Optional: Add resource requests/limits
+          # resources {
+          #  requests = {
+          #    cpu = "100m"
+          #    memory = "128Mi"
+          #  }
+          #  limits = {
+          #    cpu = "500m"
+          #    memory = "512Mi"
+          #  }
+          # }
+
+          # Optional: Add environment variables
+          # env {
+          #   name  = "MY_ENVIRONMENT_VARIABLE"
+          #   value = "some_value"
+          # }
+          # env {
+          #   name = "ANOTHER_VAR"
+          #   value_from {
+          #     secret_key_ref {
+          #       name = "my-secret-name" # Name of a Kubernetes Secret
+          #       key  = "my-secret-key" # Key within the Secret
+          #     }
+          #   }
+          # }
+
+          # liveness_probe { ... }
+          # readiness_probe { ... }
+          # volume_mounts { ... }
+          # etc.
+        }
+        # Optional: Add service account name if using Workload Identity
+        # service_account_name = "your-kubernetes-service-account"
+        # Add other pod spec settings if needed (e.g., volumes)
+      }
+    }
+  }
+
+  # Depends on the namespace being created
+  depends_on = [kubernetes_namespace.irmai_auth]
 }
 
 
@@ -145,7 +196,7 @@ resource "kubernetes_service" "irmai_auth_service" {
 
   spec {
     selector = {
-      app = "irmai-auth" # Should match the labels of the pods you want to expose
+      app = "irmai-auth" # Should match the labels of the pods you want to expose (the deployment's pods)
     }
 
     # Define the ports for the service
@@ -153,7 +204,7 @@ resource "kubernetes_service" "irmai_auth_service" {
       name        = "http-app" # Name for this service port from your YAML
       protocol    = "TCP"      # Protocol from your YAML
       port        = 80         # Service port from your YAML
-      target_port = 8080       # Container port from your YAML
+      target_port = var.auth_container_port # Container port from your YAML, using variable
     }
 
     type = "LoadBalancer" # Creates a GCP Network Load Balancer as specified in your YAML
@@ -161,11 +212,8 @@ resource "kubernetes_service" "irmai_auth_service" {
     # load_balancer_ip = "your-static-ip-address"
   }
 
-  # This service will depend on the deployment it is exposing.
-  # You will need a kubernetes_deployment resource with the label 'app = "irmai-auth"'
-  # in the 'irmai-auth' namespace for this service to have endpoints.
-  # Add a depends_on here if you define the auth deployment in this file.
-  # depends_on = [kubernetes_deployment.your_auth_deployment_resource_name]
+  # Depends on the deployment it is exposing.
+  depends_on = [kubernetes_deployment.irmai_auth_deployment]
 }
 
 # Add other resources (like Ingress, Secrets, etc.) below if needed
