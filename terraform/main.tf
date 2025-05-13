@@ -120,7 +120,7 @@ resource "kubernetes_deployment" "irmai_module" {
 }
 
 # Kubernetes Service to Expose Deployment
-resource "kubernetes_service" "irmai_service" {
+resource "kubernetes_service" "irmaiauth_demo_service" {
   provider = kubernetes
   metadata {
     name      = "irmaiauth-demo-module-service"
