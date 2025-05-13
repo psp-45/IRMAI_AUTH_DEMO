@@ -1,5 +1,5 @@
 apiVersion: v2
-name: irmai-auth-module
+name: irmaiauth-demo-module
 description: A Helm chart for the irmai authentication
 version: 0.1.0
 appVersion: "1.0"
