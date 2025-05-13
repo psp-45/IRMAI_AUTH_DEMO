@@ -26,5 +26,5 @@ output "kubernetes_namespace" {
 output "irmai_service_external_ip" {
   description = "The external IP address of the Irmai service LoadBalancer"
   # Use splat expression [*] in case ingress list is empty during plan
-  value       = flatten(kubernetes_service.irmaiauth_demo_service.status[*].load_balancer[*].ingress[*].ip)[0]
+  value       = flatten(kubernetes_service.irmai_service.status[*].load_balancer[*].ingress[*].ip)[0]
 }
