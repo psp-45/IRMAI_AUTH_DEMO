@@ -77,7 +77,7 @@ resource "kubernetes_deployment" "irmaiauth_demo_module" {
   provider = kubernetes
   metadata {
     name      = "irmaiauth-demo-module"
-    namespace = kubernetes_namespace.irmai_auth.metadata[0].name
+    namespace = kubernetes_namespace.irmaiauth_demo.metadata[0].name
     labels = {
       app = "irmaiauth-demo-module"
     }
