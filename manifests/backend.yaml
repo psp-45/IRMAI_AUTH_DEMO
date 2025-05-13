@@ -1,38 +1,32 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: irmai-auth
-  namespace: irmai-auth
+  name: irmaiauth-demo
+  namespace: irmaiauth-demo
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: irmai-auth
+      app: irmaiauth-demo
   template:
     metadata:
       labels:
-        app: irmai-auth
+        app: irmaiauth-demo
     spec:
       containers:
-        - name: irmai-auth
-          image: irmaiauthacr.azurecr.io/irmai-auth-module:latest
-          imagePullPolicy: Always
+        - name: irmaiauth-demo
+          image: us-central1-docker.pkg.dev/midyear-lattice-455113-n7/irmai-artifact/irmaiauth-demo-module:latest
           ports:
             - containerPort: 8080
-          securityContext:
-            runAsUser: 1000
-            runAsGroup: 1000
-            allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
           
 apiVersion: v1
 kind: Service
 metadata:
-  name: irmai-auth-service
-  namespace: irmai-auth
+  name: irmaiauth-demo-module-service
+  namespace: irmaiauth-demo
 spec:
   selector:
-    app: irmai-auth
+    app: irmaiauth-demo-module
   ports:
     - name: http-app
       protocol: TCP
