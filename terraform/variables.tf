@@ -35,3 +35,29 @@ variable "node_machine_type" {
   type        = string
   default     = "n1-standard-8" # Default machine type, ensure this meets your needs and budget
 }
+
+# Add variables needed for the irmai-auth deployment
+variable "auth_image_name" {
+  description = "The name of the irmai-auth container image in Artifact Registry"
+  type        = string
+  # No default, should be provided in terraform.tfvars
+}
+
+variable "auth_image_tag" {
+  description = "The tag for the irmai-auth container image"
+  type        = string
+  default     = "latest"
+}
+
+variable "auth_replica_count" {
+  description = "The number of replicas for the irmai-auth deployment"
+  type        = number
+  default     = 1
+}
+
+variable "auth_container_port" {
+  description = "The port the irmai-auth container listens on"
+  type        = number
+  default     = 8080 # Matches the targetPort in the service
+}
+
