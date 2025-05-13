@@ -37,7 +37,7 @@ data "google_container_cluster" "primary" {
 # 1. If a node pool named "primary-node-pool" ALREADY EXISTS in your cluster
 #    (specified by var.gke_cluster_name) and was NOT created by this Terraform configuration,
 #    you MUST import it before applying changes. Use the command:
-#    terraform import google_container_node_pool.primary_nodes projects/<YOUR_PROJECT_ID>/locations/<REGION>/clusters/<YOUR_GKE_CLUSTER_NAME>/nodePools/primary-node-pool
+terraform import google_container_node_pool.primary_nodes projects/midyear-lattice-455113-n7/locations/us-central1/clusters/irmai-cluster/nodePools/primary-node-pool
 #    (Replace placeholders with your actual values from terraform.tfvars)
 #
 # 2. If "primary-node-pool" does NOT exist in your cluster, Terraform will attempt to create it.
